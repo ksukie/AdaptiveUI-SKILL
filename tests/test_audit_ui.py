@@ -21,6 +21,13 @@ SCRIPT = (
 FIXTURES = ROOT / "tests" / "fixtures"
 
 
+def resolved_temporary_directory():
+    """Create test directories below the canonical system temp path."""
+
+    base = Path(tempfile.gettempdir()).resolve()
+    return tempfile.TemporaryDirectory(dir=str(base))
+
+
 class AuditCliTests(unittest.TestCase):
     maxDiff = None
 
@@ -144,7 +151,7 @@ class AuditCliTests(unittest.TestCase):
         self.assertNotIn("AUI003", {item["rule_id"] for item in payload["findings"]})
 
     def test_output_file_contains_json_and_stdout_is_empty(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
+        with resolved_temporary_directory() as directory:
             output = Path(directory) / "nested" / "report.json"
             result = self.run_cli(
                 FIXTURES / "good",
@@ -303,7 +310,7 @@ class AuditCliTests(unittest.TestCase):
         self.assertNotIn("AUI022", {item["rule_id"] for item in payload["findings"]})
 
     def test_output_symlink_is_rejected_without_changing_its_target(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
+        with resolved_temporary_directory() as directory:
             root = Path(directory)
             outside = root / "outside.txt"
             outside.write_text("preserve me", encoding="utf-8")
@@ -324,7 +331,7 @@ class AuditCliTests(unittest.TestCase):
         self.assertEqual(preserved, "preserve me")
 
     def test_output_path_cannot_traverse_a_linked_directory(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
+        with resolved_temporary_directory() as directory:
             parent = Path(directory)
             root = parent / "site"
             root.mkdir()
