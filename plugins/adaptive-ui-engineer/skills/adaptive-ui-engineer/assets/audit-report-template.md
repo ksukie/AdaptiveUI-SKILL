@@ -13,11 +13,19 @@ State the current usability outcome and the most important decision in two or th
 - Compatibility baseline:
 - Distribution: private / shareable with evidence / shareable with evidence redacted
 
+## Finding field semantics
+
+- `confidence`: `high` / `medium` / `low`; certainty of the rule's source assessment.
+- `evidence_level`: `source_observed` / `static_inferred` / `runtime_observed`; origin of the evidence.
+- `validation_state`: `not_applicable` / `not_run` / `reproduced` / `not_reproduced` / `manual_review_needed`; outcome of additional validation.
+
+Do not use `not_run` when the source fact is sufficient and no extra validation is needed. Do not use `runtime_observed`, `reproduced`, or `not_reproduced` without an actual rendered-interface check.
+
 ## Findings and decisions
 
-| Priority | Evidence | User impact | Root cause | Decision | Verification |
-| --- | --- | --- | --- | --- | --- |
-| P1 | `path:line` | Describe the affected task or user | Describe the underlying constraint | Describe the minimal change | Pass / Fail / Not run |
+| Priority | Confidence | Evidence level | Validation state | Evidence | User impact | Decision |
+| --- | --- | --- | --- | --- | --- | --- |
+| P1 | high | `source_observed` | `not_applicable` | `path:line` and excerpt | Describe the affected task or user | Describe the minimal change |
 
 ## Verification
 

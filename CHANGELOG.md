@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-12
+
+### Changed
+
+- Added `confidence`, `evidence_level`, and `validation_state` as separate finding dimensions, with a normative audit-report JSON schema and synchronized text output, rule metadata, documentation, and tests.
+- Bumped the audit report schema to version 2.
+- Restricted the static auditor to static evidence and validation states, added full Draft 2020-12 report validation in CI, and locked rule-catalog metadata to the implementation.
+
 ## [0.1.0] - 2026-07-11
 
 ### Added
@@ -23,5 +31,6 @@ All notable changes to this project will be documented in this file. The format 
 - Made report metadata root-relative by default, added opt-in evidence redaction and absolute paths, sanitized skipped-file errors, and made explicit output atomic with linked-destination and linked-parent refusal.
 - Pinned GitHub Actions to immutable commits, authenticated the fixed Agent Skills validator source archive by SHA-256, and locked every CI-only Python dependency by version and hash.
 
-[Unreleased]: https://github.com/ksukie/adaptive-ui-engineer/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/ksukie/adaptive-ui-engineer/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/ksukie/adaptive-ui-engineer/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ksukie/adaptive-ui-engineer/releases/tag/v0.1.0

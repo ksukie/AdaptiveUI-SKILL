@@ -15,7 +15,7 @@ Run the local suite from the repository root:
 python -m unittest discover -s tests -v
 ```
 
-The reference Agent Skills validator is CI-only. Its source commit and archive digest are fixed in `.github/scripts/run_skills_ref.py`, and its complete dependency graph is version- and hash-locked in `.github/requirements/skills-ref.txt`; do not add validator packages to the runtime auditor. When updating the validator, review the upstream diff and update the commit, archive digest, expected source manifest, tests, and changelog together. Never replace the pin with a branch or mutable tag.
+The reference Agent Skills validator and JSON Schema report validator are CI-only. The Agent Skills source commit and archive digest are fixed in `.github/scripts/run_skills_ref.py`, and all CI-only dependencies are version- and hash-locked in `.github/requirements/skills-ref.txt`; do not add these packages to the runtime auditor. When updating the Agent Skills validator, review the upstream diff and update the commit, archive digest, expected source manifest, tests, and changelog together. Never replace the pin with a branch or mutable tag.
 
 Run the auditor manually against a fixture:
 

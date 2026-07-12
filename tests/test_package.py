@@ -33,6 +33,7 @@ class PackageContractTests(unittest.TestCase):
             PLUGIN / ".codex-plugin" / "plugin.json",
             SKILL / "SKILL.md",
             SKILL / "agents" / "openai.yaml",
+            SKILL / "assets" / "audit-report.schema.json",
         ]
         self.assertEqual([str(path) for path in paths if not path.is_file()], [])
 
@@ -103,6 +104,39 @@ class PackageContractTests(unittest.TestCase):
         self.assertEqual(implemented, expected)
         self.assertTrue(expected.issubset(documented))
 
+        tree = ast.parse(script)
+        metadata = None
+        for node in tree.body:
+            if (
+                isinstance(node, ast.AnnAssign)
+                and isinstance(node.target, ast.Name)
+                and node.target.id == "RULE_METADATA"
+            ):
+                metadata = ast.literal_eval(node.value)
+                break
+        self.assertIsNotNone(metadata)
+
+        documented_metadata = {}
+        row_pattern = re.compile(
+            r"^\| (AUI\d{3}) \| [^|]+ \| [^|]+ \| `([^`]+)` \| `([^`]+)` \|"
+        )
+        for line in catalog.splitlines():
+            match = row_pattern.match(line)
+            if match:
+                documented_metadata[match.group(1)] = {
+                    "evidence_level": match.group(2),
+                    "default_validation_state": match.group(3),
+                }
+        self.assertEqual(metadata, documented_metadata)
+
+    def test_tool_and_plugin_versions_match(self) -> None:
+        manifest = json.loads((PLUGIN / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
+        script = (SKILL / "scripts" / "audit_ui.py").read_text(encoding="utf-8")
+        match = re.search(r'^TOOL_VERSION = "([^"]+)"$', script, flags=re.MULTILINE)
+        self.assertIsNotNone(match)
+        self.assertEqual(match.group(1), manifest["version"])
+        self.assertEqual(manifest["version"], "0.2.0")
+
     def test_runtime_auditor_uses_only_standard_library_modules(self) -> None:
         script_path = SKILL / "scripts" / "audit_ui.py"
         source = script_path.read_text(encoding="utf-8")
@@ -142,7 +176,30 @@ class PackageContractTests(unittest.TestCase):
             self.assertNotIn(dangerous, source)
 
     def test_json_assets_are_valid(self) -> None:
-        json.loads((SKILL / "assets" / "audit-config.schema.json").read_text(encoding="utf-8"))
+        config_schema = json.loads(
+            (SKILL / "assets" / "audit-config.schema.json").read_text(encoding="utf-8")
+        )
+        report_schema = json.loads(
+            (SKILL / "assets" / "audit-report.schema.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(config_schema["type"], "object")
+        self.assertEqual(report_schema["properties"]["schema_version"]["const"], 2)
+        finding = report_schema["$defs"]["finding"]
+        self.assertTrue(
+            {"confidence", "evidence_level", "validation_state"}.issubset(
+                finding["required"]
+            )
+        )
+        self.assertEqual(
+            set(finding["properties"]["validation_state"]["enum"]),
+            {
+                "not_applicable",
+                "not_run",
+                "reproduced",
+                "not_reproduced",
+                "manual_review_needed",
+            },
+        )
         evals = json.loads((ROOT / "tests" / "evals" / "trigger-cases.json").read_text(encoding="utf-8"))
         self.assertEqual(evals["schema_version"], 1)
         self.assertGreaterEqual(len(evals["positive"]), 6)
@@ -194,7 +251,7 @@ class PackageContractTests(unittest.TestCase):
         )
         packages = re.findall(r"(?m)^([A-Za-z0-9_.-]+)==([^\s\\]+)", lock)
         hashes = re.findall(r"--hash=sha256:([0-9a-f]{64})", lock)
-        self.assertEqual(len(packages), 5)
+        self.assertEqual(len(packages), 11)
         self.assertEqual(len(hashes), len(packages))
         self.assertNotIn("skills-ref", {name for name, _ in packages})
 

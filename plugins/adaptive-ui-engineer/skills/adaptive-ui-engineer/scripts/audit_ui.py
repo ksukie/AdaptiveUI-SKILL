@@ -19,8 +19,8 @@ from urllib.parse import unquote, urlsplit
 
 
 TOOL_NAME = "adaptive-ui-engineer"
-TOOL_VERSION = "0.1.0"
-SCHEMA_VERSION = 1
+TOOL_VERSION = "0.2.0"
+SCHEMA_VERSION = 2
 MAX_FILE_BYTES = 2 * 1024 * 1024
 
 SUPPORTED_SUFFIXES: Set[str] = {
@@ -62,6 +62,45 @@ DEFAULT_EXCLUDE_DIRS = {
 DEFAULT_EXCLUDE_PATTERNS = ("**/*.min.js", "**/*.min.css", "**/*.map")
 PRIORITY_ORDER = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
 VALID_CONFIDENCE = {"high", "medium", "low"}
+VALID_EVIDENCE_LEVELS = {"source_observed", "static_inferred", "runtime_observed"}
+VALID_VALIDATION_STATES = {
+    "not_applicable",
+    "not_run",
+    "reproduced",
+    "not_reproduced",
+    "manual_review_needed",
+}
+STATIC_EVIDENCE_LEVELS = {"source_observed", "static_inferred"}
+STATIC_VALIDATION_STATES = {"not_applicable", "not_run", "manual_review_needed"}
+
+# Each rule owns the evidence semantics emitted by this static auditor.
+# Runtime-only values remain in the report schema for a future browser verifier,
+# but this module cannot emit them.
+RULE_METADATA: Dict[str, Dict[str, str]] = {
+    "AUI001": {"evidence_level": "source_observed", "default_validation_state": "not_applicable"},
+    "AUI002": {"evidence_level": "source_observed", "default_validation_state": "not_applicable"},
+    "AUI003": {"evidence_level": "static_inferred", "default_validation_state": "not_run"},
+    "AUI004": {"evidence_level": "static_inferred", "default_validation_state": "not_run"},
+    "AUI005": {"evidence_level": "static_inferred", "default_validation_state": "not_run"},
+    "AUI006": {"evidence_level": "static_inferred", "default_validation_state": "not_run"},
+    "AUI007": {"evidence_level": "static_inferred", "default_validation_state": "not_run"},
+    "AUI008": {"evidence_level": "static_inferred", "default_validation_state": "manual_review_needed"},
+    "AUI009": {"evidence_level": "source_observed", "default_validation_state": "not_applicable"},
+    "AUI010": {"evidence_level": "static_inferred", "default_validation_state": "not_run"},
+    "AUI011": {"evidence_level": "source_observed", "default_validation_state": "not_applicable"},
+    "AUI012": {"evidence_level": "source_observed", "default_validation_state": "manual_review_needed"},
+    "AUI013": {"evidence_level": "source_observed", "default_validation_state": "manual_review_needed"},
+    "AUI014": {"evidence_level": "static_inferred", "default_validation_state": "manual_review_needed"},
+    "AUI015": {"evidence_level": "static_inferred", "default_validation_state": "not_run"},
+    "AUI016": {"evidence_level": "static_inferred", "default_validation_state": "manual_review_needed"},
+    "AUI017": {"evidence_level": "static_inferred", "default_validation_state": "not_run"},
+    "AUI018": {"evidence_level": "source_observed", "default_validation_state": "not_applicable"},
+    "AUI019": {"evidence_level": "source_observed", "default_validation_state": "not_applicable"},
+    "AUI020": {"evidence_level": "source_observed", "default_validation_state": "not_applicable"},
+    "AUI021": {"evidence_level": "source_observed", "default_validation_state": "not_applicable"},
+    "AUI022": {"evidence_level": "source_observed", "default_validation_state": "not_applicable"},
+    "AUI023": {"evidence_level": "source_observed", "default_validation_state": "not_applicable"},
+}
 
 
 class AuditError(Exception):
@@ -87,6 +126,8 @@ class Finding:
     rule_id: str
     priority: str
     confidence: str
+    evidence_level: str
+    validation_state: str
     category: str
     path: str
     line: int
@@ -345,6 +386,24 @@ class Auditor:
             raise ValueError("Unknown priority: {0}".format(priority))
         if confidence not in VALID_CONFIDENCE:
             raise ValueError("Unknown confidence: {0}".format(confidence))
+        try:
+            metadata = RULE_METADATA[rule_id]
+        except KeyError as exc:
+            raise ValueError("Missing rule metadata: {0}".format(rule_id)) from exc
+        resolved_evidence_level = metadata["evidence_level"]
+        resolved_validation_state = metadata["default_validation_state"]
+        if resolved_evidence_level not in STATIC_EVIDENCE_LEVELS:
+            raise ValueError(
+                "Static auditor cannot emit evidence level: {0}".format(
+                    resolved_evidence_level
+                )
+            )
+        if resolved_validation_state not in STATIC_VALIDATION_STATES:
+            raise ValueError(
+                "Static auditor cannot emit validation state: {0}".format(
+                    resolved_validation_state
+                )
+            )
         for entry in self.config.ignore:
             if entry.rule == rule_id and any(path_matches(path, item) for item in entry.paths):
                 self.suppressed += 1
@@ -354,6 +413,8 @@ class Auditor:
                 rule_id=rule_id,
                 priority=priority,
                 confidence=confidence,
+                evidence_level=resolved_evidence_level,
+                validation_state=resolved_validation_state,
                 category=category,
                 path=normalized_path(path),
                 line=max(1, line),
@@ -1086,6 +1147,9 @@ def format_text(result: Dict[str, Any]) -> str:
                 "",
                 "[{priority}] {rule_id} {path}:{line} ({confidence} confidence)".format(**item),
                 item["message"],
+                "Evidence level: {evidence_level} | Validation: {validation_state}".format(
+                    **item
+                ),
                 "Evidence: {0}".format(item["evidence"]),
                 "Recommendation: {0}".format(item["recommendation"]),
             ]

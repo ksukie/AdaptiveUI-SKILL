@@ -129,4 +129,5 @@ Use [audit-report-template.md](assets/audit-report-template.md) when the user re
 - [rule-catalog.md](references/rule-catalog.md): stable auditor rule definitions, confidence, and remediation boundaries.
 - [responsive-foundation.css](assets/responsive-foundation.css): conservative opt-in CSS foundation.
 - [audit-config.schema.json](assets/audit-config.schema.json): configuration schema.
+- [audit-report.schema.json](assets/audit-report.schema.json): normative JSON report contract and evidence-state enums.
 - [audit-report-template.md](assets/audit-report-template.md): reusable audit deliverable.

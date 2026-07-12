@@ -148,7 +148,7 @@ python plugins/adaptive-ui-engineer/skills/adaptive-ui-engineer/scripts/audit_ui
 | 1 | 扫描完成，存在达到阈值的发现 |
 | 2 | 输入、配置或输出操作无效 |
 
-JSON 固定使用 `schema_version: 1`。每条发现包含 `rule_id`、`priority`、`confidence`、`category`、`path`、`line`、`message`、`evidence` 和 `recommendation`。报告元数据默认使用相对于审计根目录的路径；只有显式传入 `--absolute-paths` 才会输出绝对路径。证据可能包含短源码片段，未经授权不得共享源码时，请在分享报告前使用 `--redact-evidence`。
+JSON 固定使用 `schema_version: 2`。每条发现包含 `rule_id`、`priority`、`confidence`、`evidence_level`、`validation_state`、`category`、`path`、`line`、`message`、`evidence` 和 `recommendation`。`confidence` 表示规则判断的确定程度，`evidence_level` 表示证据来源，`validation_state` 表示额外验证是否适用及其结果。规范定义见 [audit-report.schema.json](plugins/adaptive-ui-engineer/skills/adaptive-ui-engineer/assets/audit-report.schema.json)。报告元数据默认使用相对于审计根目录的路径；只有显式传入 `--absolute-paths` 才会输出绝对路径。证据可能包含短源码片段，未经授权不得共享源码时，请在分享报告前使用 `--redact-evidence`。
 
 ### 配置文件
 

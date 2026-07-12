@@ -148,7 +148,7 @@ Exit codes:
 | 1 | Scan completed and a finding met the selected threshold |
 | 2 | Invalid input, configuration, or output operation |
 
-JSON output uses `schema_version: 1`. Each finding includes `rule_id`, `priority`, `confidence`, `category`, `path`, `line`, `message`, `evidence`, and `recommendation`. Report metadata uses paths relative to the audit root by default; `--absolute-paths` is an explicit opt-in. Evidence can contain short source excerpts, so use `--redact-evidence` before sharing a report when source disclosure is not authorized.
+JSON output uses `schema_version: 2`. Each finding includes `rule_id`, `priority`, `confidence`, `evidence_level`, `validation_state`, `category`, `path`, `line`, `message`, `evidence`, and `recommendation`. `confidence` describes rule certainty, `evidence_level` identifies the evidence origin, and `validation_state` records whether additional validation applies and its outcome. The normative contract is [audit-report.schema.json](plugins/adaptive-ui-engineer/skills/adaptive-ui-engineer/assets/audit-report.schema.json). Report metadata uses paths relative to the audit root by default; `--absolute-paths` is an explicit opt-in. Evidence can contain short source excerpts, so use `--redact-evidence` before sharing a report when source disclosure is not authorized.
 
 ### Configuration
 

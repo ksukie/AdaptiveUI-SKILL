@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import importlib.util
+import inspect
 import json
 import subprocess
 import sys
@@ -19,6 +21,17 @@ SCRIPT = (
     / "audit_ui.py"
 )
 FIXTURES = ROOT / "tests" / "fixtures"
+REPORT_SCHEMA = SCRIPT.parent.parent / "assets" / "audit-report.schema.json"
+
+
+def load_auditor_module():
+    spec = importlib.util.spec_from_file_location("adaptive_ui_auditor_test", SCRIPT)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Cannot load auditor module")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def resolved_temporary_directory():
@@ -58,18 +71,80 @@ class AuditCliTests(unittest.TestCase):
     def test_version(self) -> None:
         result = self.run_cli("--version")
         self.assertEqual(result.returncode, 0)
-        self.assertEqual(result.stdout.strip(), "0.1.0")
+        self.assertEqual(result.stdout.strip(), "0.2.0")
 
     def test_good_fixture_has_no_high_priority_findings(self) -> None:
         result, payload = self.run_json(FIXTURES / "good", "--fail-on", "none")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(payload["schema_version"], 1)
+        self.assertEqual(payload["schema_version"], 2)
         self.assertEqual(payload["tool"]["name"], "adaptive-ui-engineer")
         self.assertEqual(payload["summary"]["by_priority"]["P0"], 0)
         self.assertEqual(payload["summary"]["by_priority"]["P1"], 0)
         self.assertGreaterEqual(payload["summary"]["files_scanned"], 3)
         for finding in payload["findings"]:
             self.assertNotIn("\\", finding["path"])
+
+    def test_findings_follow_report_schema_metadata_enums(self) -> None:
+        result, payload = self.run_json(FIXTURES / "bad", "--fail-on", "none")
+        schema = json.loads(REPORT_SCHEMA.read_text(encoding="utf-8"))
+        finding_schema = schema["$defs"]["finding"]
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(payload["schema_version"], schema["properties"]["schema_version"]["const"])
+        for finding in payload["findings"]:
+            self.assertEqual(set(finding), set(finding_schema["required"]))
+            for field in ("confidence", "evidence_level", "validation_state"):
+                self.assertIn(finding[field], finding_schema["properties"][field]["enum"])
+
+    def test_rule_defaults_distinguish_observation_inference_and_review(self) -> None:
+        result, payload = self.run_json(FIXTURES / "bad", "--fail-on", "none")
+        by_rule = {item["rule_id"]: item for item in payload["findings"]}
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            (by_rule["AUI020"]["evidence_level"], by_rule["AUI020"]["validation_state"]),
+            ("source_observed", "not_applicable"),
+        )
+        self.assertEqual(
+            (by_rule["AUI004"]["evidence_level"], by_rule["AUI004"]["validation_state"]),
+            ("static_inferred", "not_run"),
+        )
+        self.assertEqual(by_rule["AUI008"]["validation_state"], "manual_review_needed")
+
+    def test_static_auditor_cannot_emit_runtime_only_states(self) -> None:
+        auditor_module = load_auditor_module()
+        add_parameters = inspect.signature(auditor_module.Auditor.add).parameters
+        self.assertNotIn("evidence_level", add_parameters)
+        self.assertNotIn("validation_state", add_parameters)
+        finding_schema = json.loads(REPORT_SCHEMA.read_text(encoding="utf-8"))["$defs"][
+            "finding"
+        ]
+        self.assertEqual(
+            auditor_module.VALID_VALIDATION_STATES,
+            set(finding_schema["properties"]["validation_state"]["enum"]),
+        )
+        self.assertEqual(
+            auditor_module.VALID_EVIDENCE_LEVELS,
+            set(finding_schema["properties"]["evidence_level"]["enum"]),
+        )
+        self.assertEqual(
+            set(auditor_module.RULE_METADATA),
+            {"AUI{0:03d}".format(number) for number in range(1, 24)},
+        )
+        self.assertNotIn("runtime_observed", auditor_module.STATIC_EVIDENCE_LEVELS)
+        self.assertTrue(
+            {"reproduced", "not_reproduced"}.isdisjoint(
+                auditor_module.STATIC_VALIDATION_STATES
+            )
+        )
+        for metadata in auditor_module.RULE_METADATA.values():
+            self.assertIn(
+                metadata["evidence_level"], auditor_module.STATIC_EVIDENCE_LEVELS
+            )
+            self.assertIn(
+                metadata["default_validation_state"],
+                auditor_module.STATIC_VALIDATION_STATES,
+            )
 
     def test_bad_fixture_reports_expected_rules(self) -> None:
         result, payload = self.run_json(FIXTURES / "bad", "--fail-on", "none")
@@ -94,6 +169,7 @@ class AuditCliTests(unittest.TestCase):
         result = self.run_cli(FIXTURES / "bad", "--format", "text", "--fail-on", "P1")
         self.assertEqual(result.returncode, 1)
         self.assertIn("[P0] AUI002", result.stdout)
+        self.assertIn("Evidence level: source_observed | Validation: not_applicable", result.stdout)
         self.assertEqual(result.stderr, "")
 
     def test_default_threshold_does_not_fail(self) -> None:
@@ -165,7 +241,7 @@ class AuditCliTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout, "")
             payload = json.loads(output.read_text(encoding="utf-8"))
-        self.assertEqual(payload["schema_version"], 1)
+        self.assertEqual(payload["schema_version"], 2)
 
     def test_invalid_config_returns_two(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

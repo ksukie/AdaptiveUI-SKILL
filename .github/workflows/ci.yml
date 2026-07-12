@@ -68,5 +68,5 @@ jobs:
         run: >-
           python .github/scripts/run_skills_ref.py
           plugins/adaptive-ui-engineer/skills/adaptive-ui-engineer
-      - name: Validate package contracts
-        run: python -m unittest tests.test_package -v
+      - name: Validate package and report-schema contracts
+        run: python -m unittest tests.test_package tests.test_report_schema -v
