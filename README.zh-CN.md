@@ -215,7 +215,7 @@ Schema 位于 `plugins/adaptive-ui-engineer/skills/adaptive-ui-engineer/assets/a
 | IE11 与 Safari 16.4 以下 | 不支持，但仍优先保证核心语义降级 |
 | Python 审计器 | Windows、macOS、Linux 上的 Python 3.9+ |
 
-### 0.2.0 证据状态
+### 0.2.1 证据状态
 
 - 已在 Windows 与 Python 3.9、3.10、3.11 上完成本地验证。
 - 单元测试和包校验覆盖跨平台路径行为；仓库 CI workflow 已配置 Windows、macOS、Linux 和 Python 3.9–3.13。

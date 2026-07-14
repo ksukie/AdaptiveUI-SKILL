@@ -4,11 +4,17 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-15
+
 ### Fixed
 
 - Made bundled-auditor instructions resolve the Skill root instead of assuming the caller's working directory.
 - Prevented focus-outline decimal values and scoped reduced-motion overrides from producing avoidable static-auditor findings.
 - Corrected the configuration-schema identifier and current release documentation.
+
+### Changed
+
+- Documented update paths for Git clones, manual Skill copies, and Codex marketplace installations.
 
 ## [0.2.0] - 2026-07-12
 
@@ -37,6 +43,7 @@ All notable changes to this project will be documented in this file. The format 
 - Made report metadata root-relative by default, added opt-in evidence redaction and absolute paths, sanitized skipped-file errors, and made explicit output atomic with linked-destination and linked-parent refusal.
 - Pinned GitHub Actions to immutable commits, authenticated the fixed Agent Skills validator source archive by SHA-256, and locked every CI-only Python dependency by version and hash.
 
-[Unreleased]: https://github.com/ksukie/adaptive-ui-engineer/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/ksukie/adaptive-ui-engineer/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/ksukie/adaptive-ui-engineer/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/ksukie/adaptive-ui-engineer/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ksukie/adaptive-ui-engineer/releases/tag/v0.1.0

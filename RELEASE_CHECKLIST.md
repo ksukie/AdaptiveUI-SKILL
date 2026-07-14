@@ -1,11 +1,11 @@
-# First public release checklist
+# Release checklist
 
-Use this checklist for the `0.2.0` publication and adapt it for later releases. It separates repository readiness from claims that require independent review.
+Use this checklist for each public release. It separates repository readiness from claims that require independent review.
 
 ## Identity, rights, and documentation
 
 - [ ] Confirm that `ksukie` is the intended public author and repository owner everywhere it appears.
-- [ ] Confirm that the year, version `0.2.0`, project URLs, installation names, and marketplace names are correct.
+- [ ] Confirm that the year, release version, project URLs, installation names, and marketplace names are correct.
 - [ ] Confirm that every source file and project-owned asset can be released under Apache-2.0.
 - [ ] Preserve required third-party notices if any third-party material is added. Do not create a `NOTICE` file unless there is content that actually requires it.
 - [ ] Read the English and Chinese READMEs side by side and verify that their behavior and compatibility claims agree.
