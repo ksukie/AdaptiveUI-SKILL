@@ -84,6 +84,14 @@ class AuditCliTests(unittest.TestCase):
         for finding in payload["findings"]:
             self.assertNotIn("\\", finding["path"])
 
+    def test_foundation_asset_does_not_trigger_avoidable_rules(self) -> None:
+        foundation = SCRIPT.parent.parent / "assets" / "responsive-foundation.css"
+        result, payload = self.run_json(foundation, "--fail-on", "none")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        rule_ids = {item["rule_id"] for item in payload["findings"]}
+        self.assertNotIn("AUI010", rule_ids)
+        self.assertNotIn("AUI011", rule_ids)
+
     def test_findings_follow_report_schema_metadata_enums(self) -> None:
         result, payload = self.run_json(FIXTURES / "bad", "--fail-on", "none")
         schema = json.loads(REPORT_SCHEMA.read_text(encoding="utf-8"))

@@ -795,7 +795,9 @@ class Auditor:
                 "List only the properties whose animation communicates state.",
             )
 
-        outline = re.search(r"(?i)outline(?:-style)?\s*:\s*(?:none|0(?:[a-z%]+)?)\b", css)
+        outline = re.search(
+            r"(?i)outline(?:-style)?\s*:\s*(?:none|0(?:[a-z%]+)?)(?![\w.])", css
+        )
         if outline:
             self.add(
                 "AUI010",
@@ -809,7 +811,7 @@ class Auditor:
                 "Confirm the same selector provides a visible keyboard focus replacement.",
             )
 
-        important_matches = list(re.finditer(r"!important\b", css, flags=re.IGNORECASE))
+        important_matches = collect_important_outside_reduced_motion(css)
         if len(important_matches) >= 3:
             self.add(
                 "AUI011",
@@ -1079,6 +1081,29 @@ def resolve_local_reference(reference: str, source: Path, root: Path) -> Optiona
 def extract_style_segments(text: str) -> Iterable[Tuple[str, int]]:
     for match in re.finditer(r"(?is)<style\b[^>]*>(.*?)</style\s*>", text):
         yield match.group(1), match.start(1)
+
+
+def collect_important_outside_reduced_motion(css: str) -> List[re.Match[str]]:
+    ranges: List[Tuple[int, int]] = []
+    for media in re.finditer(
+        r"(?is)@media\b[^{}]*\(\s*prefers-reduced-motion\s*:\s*reduce\s*\)[^{]*\{",
+        css,
+    ):
+        start = media.end()
+        depth = 1
+        for index in range(start, len(css)):
+            if css[index] == "{":
+                depth += 1
+            elif css[index] == "}":
+                depth -= 1
+                if depth == 0:
+                    ranges.append((start, index))
+                    break
+    return [
+        match
+        for match in re.finditer(r"!important\b", css, flags=re.IGNORECASE)
+        if not any(start <= match.start() < end for start, end in ranges)
+    ]
 
 
 def collect_breakpoints(css: str) -> List[float]:

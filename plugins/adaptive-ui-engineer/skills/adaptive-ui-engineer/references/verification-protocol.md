@@ -8,19 +8,21 @@ If a page cannot be run, perform static verification and label runtime checks â€
 
 ## 2. Run static triage
 
-Run the bundled auditor from the skill root:
+Resolve `skill-root` as the directory containing `SKILL.md`, then invoke the bundled auditor by its resolved path. Replace `<skill-root>` with that quoted path:
 
 ```text
-python scripts/audit_ui.py <target> --format text --fail-on none
+python "<skill-root>/scripts/audit_ui.py" <target> --format text --fail-on none
 ```
 
 For CI or machine processing:
 
 ```text
-python scripts/audit_ui.py <target> --format json --fail-on P1
+python "<skill-root>/scripts/audit_ui.py" <target> --format json --fail-on P1
 ```
 
 Review medium-confidence results in context. Record a suppression only with a rule, narrow path pattern, and concrete reason. Do not suppress a rule merely to make CI green.
+
+Document-level semantic checks apply to `.html` and `.htm`. Framework component files receive source triage for CSS, scripts, and known utility patterns; rendered semantic behavior still needs runtime verification.
 
 Also run project-native type checks, lint, unit tests, accessibility tests, and production builds relevant to the authorized scope.
 

@@ -9,6 +9,8 @@ Thank you for improving Adaptive UI Engineer. Contributions should make responsi
 - An Agent Skills validator is recommended for structural changes.
 - Codex's plugin validator is recommended for plugin manifest changes.
 
+On Windows where `python` is not registered, substitute `py -3` in the commands below.
+
 Run the local suite from the repository root:
 
 ```text

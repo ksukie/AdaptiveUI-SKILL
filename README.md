@@ -35,7 +35,7 @@ This Skill replaces those shortcuts with root-cause diagnosis, constrained imple
 
 - Audit-only, implementation, and verification modes derived from the user's authorization.
 - Responsive layout review for containers, grid, flex, intrinsic sizing, overflow, zoom, media, tables, and viewport behavior.
-- Semantic visual hierarchy with a reusable radius scale for controls, buttons, cards, panels, showcases, pills, and circles.
+- Optional visual-hierarchy guidance when component radius consistency is in scope; existing design tokens win.
 - Keyboard, focus, navigation, target-size, motion, forced-color, and text-spacing checks.
 - JavaScript simplification: remove viewport-driven sizing, scroll interception, duplicate rendering, autoplay, stale listeners, and unnecessary state.
 - Adapters for Vanilla HTML/CSS/JS, React/Next, Vue/Nuxt, SvelteKit, Tailwind, scoped CSS, CSS Modules, preprocessors, and CSS-in-JS.
@@ -87,7 +87,7 @@ cp -R plugins/adaptive-ui-engineer/skills/adaptive-ui-engineer \
   "$HOME/.agents/skills/adaptive-ui-engineer"
 ```
 
-Client discovery and invocation details vary. The portable core requires only `SKILL.md`; `agents/openai.yaml` is an optional Codex presentation extension.
+Client discovery and invocation details vary. A client may discover a Skill from `SKILL.md`, but copy the entire `adaptive-ui-engineer` directory for the bundled auditor, references, and assets. `agents/openai.yaml` is an optional Codex presentation extension.
 
 ### Codex plugin after the repository is published
 
@@ -98,7 +98,7 @@ codex plugin add adaptive-ui-engineer@adaptive-ui-engineer
 
 For local plugin development, add the absolute repository directory as a non-default marketplace, then install the same plugin name. Start a new task after installation so the updated Skill is discovered.
 
-No MCP server, connector, hook, account, or authentication is required.
+The Skill adds no MCP server, connector, hook, or service credential. Marketplace installation may still use the host's normal authentication policy.
 
 ## Use the Skill
 
@@ -121,6 +121,8 @@ The description also supports implicit activation for responsive layout, overflo
 ## Static auditor
 
 The auditor is read-only unless `--output` is explicitly supplied.
+
+On Windows, use `py -3` in place of `python` when the `python` command is not registered.
 
 ```text
 python plugins/adaptive-ui-engineer/skills/adaptive-ui-engineer/scripts/audit_ui.py <target>
@@ -149,6 +151,8 @@ Exit codes:
 | 2 | Invalid input, configuration, or output operation |
 
 JSON output uses `schema_version: 2`. Each finding includes `rule_id`, `priority`, `confidence`, `evidence_level`, `validation_state`, `category`, `path`, `line`, `message`, `evidence`, and `recommendation`. `confidence` describes rule certainty, `evidence_level` identifies the evidence origin, and `validation_state` records whether additional validation applies and its outcome. The normative contract is [audit-report.schema.json](plugins/adaptive-ui-engineer/skills/adaptive-ui-engineer/assets/audit-report.schema.json). Report metadata uses paths relative to the audit root by default; `--absolute-paths` is an explicit opt-in. Evidence can contain short source excerpts, so use `--redact-evidence` before sharing a report when source disclosure is not authorized.
+
+Document-level semantic checks apply to `.html` and `.htm`. Framework component files receive source triage for CSS, scripts, and known utility patterns; rendered semantic behavior still needs runtime verification.
 
 ### Configuration
 
@@ -193,10 +197,10 @@ The bundled schema is at `plugins/adaptive-ui-engineer/skills/adaptive-ui-engine
 | IE11 and Safari below 16.4 | Unsupported; core semantic degradation is still preferred |
 | Python auditor | Python 3.9+ on Windows, macOS, and Linux |
 
-### Evidence status for 0.1.0
+### Evidence status for 0.2.0
 
 - Locally validated on Windows with Python 3.9, 3.10, and 3.11.
-- Unit tests and package checks cover cross-platform path behavior and are configured for Windows, macOS, Linux, and Python 3.9–3.13 in future CI.
+- Unit tests and package checks cover cross-platform path behavior. The repository CI workflow is configured for Windows, macOS, Linux, and Python 3.9–3.13.
 - The package does not claim that a generated or audited website passes untested browsers, assistive technologies, or WCAG conformance.
 
 ## Development and validation

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. The format 
 
 ## [Unreleased]
 
+### Fixed
+
+- Made bundled-auditor instructions resolve the Skill root instead of assuming the caller's working directory.
+- Prevented focus-outline decimal values and scoped reduced-motion overrides from producing avoidable static-auditor findings.
+- Corrected the configuration-schema identifier and current release documentation.
+
 ## [0.2.0] - 2026-07-12
 
 ### Changed
@@ -21,7 +27,7 @@ All notable changes to this project will be documented in this file. The format 
 - Zero-dependency Python static auditor with stable rule IDs and JSON output.
 - Responsive layout, accessibility, compatibility, framework, and verification references.
 - Conservative CSS foundation, report template, configuration schema, and brand assets.
-- English and Simplified Chinese documentation, test fixtures, and future CI workflow.
+- English and Simplified Chinese documentation, test fixtures, and CI workflow configuration.
 - Complete English and Simplified Chinese project disclaimers covering warranties, professional advice, certification, privacy, third-party services, trademarks, and user responsibilities.
 - First-public-release checklist, Dependabot configuration, and CodeQL workflow.
 

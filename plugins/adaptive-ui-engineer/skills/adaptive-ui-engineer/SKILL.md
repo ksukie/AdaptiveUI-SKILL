@@ -1,6 +1,6 @@
 ---
 name: adaptive-ui-engineer
-description: Audit, design, refactor, and verify resilient responsive web interfaces across HTML/CSS and common frontend frameworks. Use when the user asks to improve UI adaptation, responsive layout, breakpoint behavior, overflow, viewport units, card or panel radii, mobile navigation, accessibility interactions, CSS complexity, or cross-browser compatibility; when reviewing or modifying HTML, CSS, SCSS, Tailwind, React/Next, Vue/Nuxt, SvelteKit, or Astro interfaces; or when a page must be simplified without changing its product intent. Do not use for backend-only work, visual assets without interface code, or general copywriting.
+description: Audit, design, refactor, and verify resilient responsive web interfaces across HTML/CSS and common frontend frameworks. Use when a request materially involves responsive layout or reflow, breakpoints, overflow, viewport units, mobile navigation, accessibility interactions, CSS complexity, visual hierarchy or radius systems, cross-browser compatibility, or scoped interface simplification that preserves product intent. Do not use for backend-only work, standalone visual assets, copywriting, or routine cosmetic front-end changes that do not affect those concerns.
 ---
 
 # Adaptive UI Engineer
@@ -30,16 +30,16 @@ Build interfaces that reflow from content and constraints, preserve product inte
 
 ### 2. Collect static evidence
 
-Run the bundled auditor when Python 3.9+ is available:
+Resolve `skill-root` as the directory containing this `SKILL.md`, then run the bundled auditor when Python 3.9+ is available. Use the project's configured Python executable; on Windows, use `py -3` when `python` is unavailable. Replace `<skill-root>` with the resolved, quoted path:
 
 ```text
-python scripts/audit_ui.py <target> --format text --fail-on none
+python "<skill-root>/scripts/audit_ui.py" <target> --format text --fail-on none
 ```
 
 Use JSON for automation:
 
 ```text
-python scripts/audit_ui.py <target> --format json --fail-on P1
+python "<skill-root>/scripts/audit_ui.py" <target> --format json --fail-on P1
 ```
 
 Interpret exit code `1` as a quality threshold breach, not a script crash. Read [rule-catalog.md](references/rule-catalog.md) before acting on medium-confidence findings. Do not install Python or other dependencies solely to run the audit; perform the same checks manually when it is unavailable.
@@ -54,7 +54,7 @@ Review in this order so later styling does not conceal structural defects:
 2. Container, grid, flex, intrinsic sizing, overflow, and viewport behavior.
 3. Typography, international text, media, tables, and embedded content.
 4. Navigation, focus, keyboard, pointer, motion, contrast, and disclosure state.
-5. Radius, spacing, hierarchy, visual grouping, and design-token consistency.
+5. When visual-token consistency is in scope: radius, spacing, hierarchy, and visual grouping.
 6. JavaScript state, listeners, scroll behavior, duplicated rendering, and third-party dependencies.
 7. Browser support, fallbacks, test coverage, and evidence quality.
 
@@ -77,7 +77,7 @@ Use CSS and native behavior before JavaScript. Add a breakpoint only when conten
 
 - Repair the source of overflow; do not add global clipping as a patch.
 - Keep one layout source of truth and one interaction state source.
-- Use existing tokens when available. Otherwise map control, button, card, panel, showcase, pill, and circle radii to the scale in [responsive-layout.md](references/responsive-layout.md).
+- Use existing tokens when available. Only when radius normalization is in scope and no radius system exists, map control, button, card, panel, showcase, pill, and circle radii to the scale in [responsive-layout.md](references/responsive-layout.md).
 - Keep DOM order aligned with reading and focus order. Avoid CSS `order` for major content.
 - Avoid mandatory page scroll snapping, global wheel/touch interception, clone-based infinite carousels, and autoplay without a documented user goal and controls.
 - Remove dead branches, duplicate listeners, generated pixel sizing, and stale overrides touched by the change.

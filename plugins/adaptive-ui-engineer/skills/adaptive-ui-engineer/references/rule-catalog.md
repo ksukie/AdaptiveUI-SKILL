@@ -39,7 +39,7 @@ The static auditor emits each rule's default metadata below. `runtime_observed`,
 | AUI008 | P2 | Medium | `static_inferred` | `manual_review_needed` | A stylesheet declares motion without a reduced-motion branch in that file. A shared global policy may satisfy it. |
 | AUI009 | P2 | High/Medium | `source_observed` | `not_applicable` | `transition: all` or `transition-all` animates unrelated properties. Replace with an explicit property list. |
 | AUI010 | P1 | Medium | `static_inferred` | `not_run` | Source removes an outline. Confirm an equivalent visible focus indicator exists on the same state. |
-| AUI011 | P2 | High | `source_observed` | `not_applicable` | A stylesheet has at least three `!important` declarations. Resolve cascade ownership before adding more. |
+| AUI011 | P2 | High | `source_observed` | `not_applicable` | A stylesheet has at least three `!important` declarations outside scoped reduced-motion overrides. Resolve cascade ownership before adding more. |
 | AUI012 | P2 | Medium | `source_observed` | `manual_review_needed` | More than six distinct viewport breakpoints occur in one stylesheet. Consolidate only after mapping structural needs. |
 | AUI013 | P2 | Medium | `source_observed` | `manual_review_needed` | At least six literal, non-token radius values occur in one stylesheet. Map them to semantic roles. |
 | AUI014 | P1 | Medium | `static_inferred` | `manual_review_needed` | A wheel/touchmove listener appears with `preventDefault`. Confirm scope, escape behavior, and passive-listener intent. |

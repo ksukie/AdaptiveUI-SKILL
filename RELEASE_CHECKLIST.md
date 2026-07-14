@@ -24,6 +24,8 @@ Use this checklist for the `0.2.0` publication and adapt it for later releases. 
 
 Run from the repository root:
 
+On Windows where `python` is not registered, substitute `py -3` in the commands below.
+
 ```text
 python -m unittest discover -s tests -v
 python plugins/adaptive-ui-engineer/skills/adaptive-ui-engineer/scripts/audit_ui.py tests/fixtures/good --format json --redact-evidence --fail-on P1

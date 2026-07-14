@@ -86,6 +86,16 @@ class PackageContractTests(unittest.TestCase):
         missing = [link for link in sorted(set(links)) if not (SKILL / link).is_file()]
         self.assertEqual(missing, [])
 
+    def test_skill_documents_a_resolved_auditor_path(self) -> None:
+        documents = [
+            SKILL / "SKILL.md",
+            SKILL / "references" / "verification-protocol.md",
+        ]
+        for path in documents:
+            content = path.read_text(encoding="utf-8")
+            self.assertIn("<skill-root>/scripts/audit_ui.py", content)
+            self.assertNotIn("python scripts/audit_ui.py", content)
+
     def test_openai_metadata_references_real_assets_and_skill(self) -> None:
         content = (SKILL / "agents" / "openai.yaml").read_text(encoding="utf-8")
         self.assertIn('display_name: "Adaptive UI Engineer"', content)
@@ -183,6 +193,12 @@ class PackageContractTests(unittest.TestCase):
             (SKILL / "assets" / "audit-report.schema.json").read_text(encoding="utf-8")
         )
         self.assertEqual(config_schema["type"], "object")
+        self.assertEqual(
+            config_schema["$id"],
+            "https://raw.githubusercontent.com/ksukie/adaptive-ui-engineer/v0.2.0/"
+            "plugins/adaptive-ui-engineer/skills/adaptive-ui-engineer/assets/"
+            "audit-config.schema.json",
+        )
         self.assertEqual(report_schema["properties"]["schema_version"]["const"], 2)
         finding = report_schema["$defs"]["finding"]
         self.assertTrue(
@@ -204,6 +220,22 @@ class PackageContractTests(unittest.TestCase):
         self.assertEqual(evals["schema_version"], 1)
         self.assertGreaterEqual(len(evals["positive"]), 6)
         self.assertGreaterEqual(len(evals["negative"]), 6)
+        for group in ("positive", "negative"):
+            for case in evals[group]:
+                self.assertEqual(set(case), {"prompt", "reason"})
+                self.assertTrue(case["prompt"].strip())
+                self.assertTrue(case["reason"].strip())
+        self.assertTrue(any("cosmetic" in case["reason"] for case in evals["negative"]))
+
+    def test_readmes_state_current_release_and_portability_boundary(self) -> None:
+        english = (ROOT / "README.md").read_text(encoding="utf-8")
+        chinese = (ROOT / "README.zh-CN.md").read_text(encoding="utf-8")
+        self.assertIn("### Evidence status for 0.2.0", english)
+        self.assertIn("### 0.2.0 证据状态", chinese)
+        self.assertNotIn("future CI", english)
+        self.assertNotIn("未来 CI", chinese)
+        self.assertIn("copy the entire `adaptive-ui-engineer` directory", english)
+        self.assertIn("必须复制整个 `adaptive-ui-engineer` 目录", chinese)
 
     def test_no_scaffold_placeholders_remain(self) -> None:
         offenders = []

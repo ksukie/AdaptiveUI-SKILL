@@ -7,7 +7,7 @@
       "reason": "Explicit responsive audit with a read-only boundary."
     },
     {
-      "prompt": "Simplify the index page CSS and JavaScript without changing the soft page.",
+      "prompt": "Simplify the index page CSS and JavaScript without changing sibling pages.",
       "reason": "Scoped UI refactor and complexity reduction."
     },
     {
@@ -67,6 +67,14 @@
     {
       "prompt": "Explain how DNS resolution works.",
       "reason": "General technical explanation."
+    },
+    {
+      "prompt": "Change this React button from blue to green without changing layout, interaction, or accessibility.",
+      "reason": "Routine cosmetic front-end change outside the Skill's adaptive-UI scope."
+    },
+    {
+      "prompt": "Fix the typo in this Vue button label without changing behavior.",
+      "reason": "Copy-only component edit outside the Skill's adaptive-UI scope."
     }
   ]
 }
