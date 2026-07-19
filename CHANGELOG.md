@@ -11,6 +11,14 @@ All notable changes to this project will be documented in this file. The format 
 - Added a standard-library update scheduler shared by Adaptive-UI-S and Adaptive-UI-N. It checks no earlier than the stored absolute next-check time, uses 72-hour no-update intervals, starts update reminders at 36 hours, and shortens later confirmed-reminder intervals by 20% to a 12-hour floor.
 - Added compact bilingual release metadata with a stable release sequence so completion notices can report the installed and latest versions, subsequent stable-release count, latest summary, and next scheduled check.
 - Added a plugin-bundled `UserPromptSubmit` hook and a portable manual-Skill fallback. Update checks fail open, never update files automatically, and can be disabled with `ADAPTIVE_UI_UPDATE_CHECK=0`.
+- Added a per-invocation adaptive UI-relevance gate that derives in-scope effects from product requests even when they contain no UI terminology.
+- Added AUI024 and a browser-preview encoding protocol covering UTF-8 source validity, early HTML declarations, HTTP `Content-Type`, and the browser's effective `document.characterSet`.
+
+### Changed
+
+- Kept cosmetic-only, copy-only, unrelated database, server, deployment, infrastructure, and other outside-scope details out of each Skill's adaptive UI decisions, implementation ownership, audit surface, and completion evidence.
+- Made dual invocation deterministic: S owns an explicitly read-only request, while N owns implementation. An N-only read-only request stops before inspection and requires a current-message S invocation.
+- Defined N's mandatory audit by task-owned adaptive UI impact, including UI-affecting changes made during a broader authorized task while excluding non-UI hunks.
 
 ## [1.0.3] - 2026-07-15
 

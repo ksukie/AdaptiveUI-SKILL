@@ -52,6 +52,7 @@ The static auditor emits each rule's default metadata below. `runtime_observed`,
 | AUI021 | P1 | High | `source_observed` | `not_applicable` | An iframe lacks a title. Identify the embedded content concisely. |
 | AUI022 | P1 | High | `source_observed` | `not_applicable` | A statically resolvable local media/script/stylesheet path does not exist. Dynamic aliases and template expressions are skipped. |
 | AUI023 | P3 | High | `source_observed` | `not_applicable` | A source file is not valid UTF-8. Convert carefully and inspect visible text. |
+| AUI024 | P1/P2 | High/Medium | `source_observed` | `manual_review_needed` | A serialized HTML document without a UTF-8 BOM lacks an in-document UTF-8 declaration, declares another encoding, contains duplicates, or places the declaration after the first 1024 bytes. Confirm HTTP `Content-Type` before treating a missing declaration as a runtime defect. |
 
 ## Suppressions
 

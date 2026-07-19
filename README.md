@@ -36,6 +36,7 @@ This Skill replaces those shortcuts with root-cause diagnosis, constrained imple
 - `Adaptive-UI-S`: standard audit-only, implementation, and verification work, plus a user-requested final audit after intermittent work.
 - `Adaptive-UI-N`: UI implementation followed by a mandatory audit of this task's changed files and directly related styles.
 - Explicit-only activation: an installed Skill, a matching request, or a previous invocation never enables either Skill for a later message.
+- Adaptive UI-relevance gating: after an explicit invocation, each Skill derives in-scope adaptive UI effects even when the request names only product behavior; cosmetic-only, copy-only, and unrelated non-UI details cannot shape or expand that scope.
 - Responsive layout review for containers, grid, flex, intrinsic sizing, overflow, zoom, media, tables, and viewport behavior.
 - Optional visual-hierarchy guidance when component radius consistency is in scope; existing design tokens win.
 - Keyboard, focus, navigation, target-size, motion, forced-color, and text-spacing checks.
@@ -44,6 +45,7 @@ This Skill replaces those shortcuts with root-cause diagnosis, constrained imple
 - A zero-dependency Python auditor with stable rule IDs, confidence labels, suppressions, JSON output, and CI thresholds.
 - A standard-library, fail-open update scheduler with absolute next-check times and detailed post-task reminders; no automatic updates.
 - Optional browser evidence when the host already provides browser control; no mandatory Playwright installation.
+- Browser-preview encoding verification that separates source UTF-8 validity, the HTML declaration, HTTP `Content-Type`, and the browser's effective `document.characterSet`.
 
 ## Package layout
 
@@ -160,10 +162,10 @@ In Codex, select one of the bundled Skill labels: `@Adaptive-UI-S` or `@Adaptive
 
 | Skill | Use it for | Completion behavior |
 | --- | --- | --- |
-| `Adaptive-UI-S` | Standard responsive UI audits, implementation, refactoring, and a final audit explicitly requested after intermittent work. | Never adds a final audit automatically. A later, explicit S request can audit the named task scope read-only. |
-| `Adaptive-UI-N` | A UI implementation, repair, or refactor that must include a final review. | Before reporting completion, audits this task's changed UI files and directly related styles. It does not scan or repair unrelated historical work. |
+| `Adaptive-UI-S` | Standard responsive UI audits, ordinary implementation, refactoring, and a final audit explicitly requested after intermittent work. The request may name only product behavior. | Derives only in-scope adaptive UI effects and never adds a final audit automatically. |
+| `Adaptive-UI-N` | Product implementation, repair, or refactoring whose derived adaptive UI changes must include a final review. | Implements only in-scope adaptive UI effects, then audits every task-owned UI-affecting change and its directly related styles. |
 
-Both Skills declare explicit-only invocation. In Codex, `allow_implicit_invocation: false` prevents prompt-based implicit invocation; their instructions also reject carrying a past invocation into a later message. After each installation or update, verify the intended per-message contract in a fresh chat: invoke S or N once, then send a matching UI request without `@` or `$` and confirm no implicit Skill is used. If the current message explicitly names both Skills, N takes precedence.
+Both Skills declare explicit-only invocation. In Codex, `allow_implicit_invocation: false` prevents prompt-based implicit invocation; their instructions also reject carrying a past invocation into a later message. A valid current-message invocation starts the relevance gate even when the remaining prompt does not mention UI. Roles, states, content length, target users, and supported platforms can constrain adaptive UI when they have a concrete user-visible effect. Standalone copywriting, typo-only work, cosmetic-only changes without an adaptive consequence, and unrelated database, server, deployment, or infrastructure choices stay outside scope. This partition neither cancels nor authorizes broader work: a clear broader request in the same message can be handled under other applicable instructions, while a background fact or Skill invocation alone cannot authorize it. After each installation or update, verify the per-message contract in a fresh chat: invoke S or N once, then send a matching UI request without `@` or `$` and confirm no implicit Skill is used. If both Skills are explicitly named, S owns an explicitly read-only request; otherwise N owns the implementation request.
 
 For the canonical S/N comparison and example prompts, consult the bundled
 [mode-selection guide](plugins/adaptive-ui-engineer/skills/adaptive-ui-s/references/mode-selection.md).
@@ -182,6 +184,14 @@ Use $adaptive-ui-s to review the completed checkout task's changed files and dir
 ```text
 Use $adaptive-ui-n to normalize the card radius hierarchy and remove viewport-driven layout JavaScript, then complete the required post-change style audit.
 ```
+
+```text
+Use $adaptive-ui-n to add workspace invitations with owner, editor, and viewer roles.
+```
+
+The last prompt never mentions UI. N still derives and implements the relevant invitation entry, form, role controls, feedback states, and responsive behavior. Storage and delivery details remain outside the Adaptive-UI scope unless they create a concrete user-visible constraint.
+
+An N-only request that explicitly forbids edits stops without project inspection and asks for a current-message S invocation. N never silently activates S.
 
 ## Static auditor
 
@@ -216,6 +226,8 @@ Exit codes:
 | 2 | Invalid input, configuration, or output operation |
 
 JSON output uses `schema_version: 2`. Each finding includes `rule_id`, `priority`, `confidence`, `evidence_level`, `validation_state`, `category`, `path`, `line`, `message`, `evidence`, and `recommendation`. `confidence` describes rule certainty, `evidence_level` identifies the evidence origin, and `validation_state` records whether additional validation applies and its outcome. The normative contract is [audit-report.schema.json](plugins/adaptive-ui-engineer/skills/adaptive-ui-s/assets/audit-report.schema.json). Report metadata uses paths relative to the audit root by default; `--absolute-paths` is an explicit opt-in. Evidence can contain short source excerpts, so use `--redact-evidence` before sharing a report when source disclosure is not authorized.
+
+AUI023 reports source that is not valid UTF-8. AUI024 separately reviews serialized HTML encoding declarations: a missing declaration requires HTTP-header confirmation, while non-UTF-8, duplicate, or declarations ending after the first 1024 bytes are reported directly. Runtime preview verification still checks the main-document `Content-Type` and `document.characterSet`; static source evidence cannot prove browser decoding.
 
 Document-level semantic checks apply to `.html` and `.htm`. Framework component files receive source triage for CSS, scripts, and known utility patterns; rendered semantic behavior still needs runtime verification.
 
@@ -265,7 +277,7 @@ The bundled schema is at `plugins/adaptive-ui-engineer/skills/adaptive-ui-s/asse
 ### Evidence status for 1.1.0
 
 - Locally validated on Windows with Python 3.9, 3.10, and 3.11.
-- Unit tests and package checks cover cross-platform path behavior, absolute next-check scheduling, 72-hour no-update intervals, 36-hour update reminders, 20% decay, the 12-hour floor, and failure retries. The repository CI workflow is configured for Windows, macOS, Linux, and Python 3.9–3.13.
+- Unit tests and package checks cover the explicit-invocation relevance gate, deterministic S/N routing, AUI024 HTML declaration checks, browser-preview encoding guidance, cross-platform path behavior, and update scheduling. The repository CI workflow is configured for Windows, macOS, Linux, and Python 3.9–3.13.
 - The package does not claim that a generated or audited website passes untested browsers, assistive technologies, or WCAG conformance.
 
 ## Development and validation

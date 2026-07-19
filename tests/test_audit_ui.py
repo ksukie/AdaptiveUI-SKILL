@@ -137,7 +137,7 @@ class AuditCliTests(unittest.TestCase):
         )
         self.assertEqual(
             set(auditor_module.RULE_METADATA),
-            {"AUI{0:03d}".format(number) for number in range(1, 24)},
+            {"AUI{0:03d}".format(number) for number in range(1, 25)},
         )
         self.assertNotIn("runtime_observed", auditor_module.STATIC_EVIDENCE_LEVELS)
         self.assertTrue(
@@ -276,6 +276,80 @@ class AuditCliTests(unittest.TestCase):
             result, payload = self.run_json(page, "--fail-on", "none")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("AUI023", {item["rule_id"] for item in payload["findings"]})
+
+    def test_missing_html_encoding_declaration_requires_transport_review(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            page = Path(directory) / "index.html"
+            page.write_text(
+                '<!doctype html><html lang="en"><head><meta name="viewport" '
+                'content="width=device-width, initial-scale=1"></head><body>Text</body></html>',
+                encoding="utf-8",
+            )
+            result, payload = self.run_json(page, "--fail-on", "none")
+        findings = [item for item in payload["findings"] if item["rule_id"] == "AUI024"]
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0]["priority"], "P2")
+        self.assertEqual(findings[0]["validation_state"], "manual_review_needed")
+        self.assertIn("HTTP Content-Type", findings[0]["recommendation"])
+
+    def test_valid_early_utf8_declaration_passes_encoding_rule(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            page = Path(directory) / "index.html"
+            page.write_text(
+                '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+                '<meta name="viewport" content="width=device-width, initial-scale=1">'
+                '</head><body>中文 😀</body></html>',
+                encoding="utf-8",
+            )
+            result, payload = self.run_json(page, "--fail-on", "none")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("AUI024", {item["rule_id"] for item in payload["findings"]})
+
+    def test_utf8_bom_or_legacy_utf8_declaration_supplies_encoding(self) -> None:
+        documents = {
+            "bom": (
+                b"\xef\xbb\xbf"
+                b'<!doctype html><html lang="en"><head>'
+                b'<meta name="viewport" content="width=device-width, initial-scale=1">'
+                b"</head><body>Text</body></html>"
+            ),
+            "http-equiv": (
+                b'<!doctype html><html lang="en"><head>'
+                b'<meta http-equiv="content-type" content="text/html; charset=UTF-8">'
+                b'<meta name="viewport" content="width=device-width, initial-scale=1">'
+                b"</head><body>Text</body></html>"
+            ),
+        }
+        for name, document in documents.items():
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
+                page = Path(directory) / "index.html"
+                page.write_bytes(document)
+                result, payload = self.run_json(page, "--fail-on", "none")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertNotIn("AUI024", {item["rule_id"] for item in payload["findings"]})
+
+    def test_invalid_duplicate_and_late_html_encoding_declarations_are_reported(self) -> None:
+        cases = {
+            "invalid": '<meta charset="windows-1252">',
+            "duplicate": '<meta charset="utf-8"><meta charset="utf-8">',
+            "late": "<!--{0}--><meta charset=\"utf-8\">".format("x" * 1024),
+        }
+        for name, declaration in cases.items():
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
+                page = Path(directory) / "index.html"
+                page.write_text(
+                    '<!doctype html><html lang="en"><head>{0}'
+                    '<meta name="viewport" content="width=device-width, initial-scale=1">'
+                    '</head><body>Text</body></html>'.format(declaration),
+                    encoding="utf-8",
+                )
+                result, payload = self.run_json(page, "--fail-on", "none")
+                findings = [
+                    item for item in payload["findings"] if item["rule_id"] == "AUI024"
+                ]
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertGreaterEqual(len(findings), 1)
 
     def test_framework_fixtures_scan_without_parser_failure(self) -> None:
         result, payload = self.run_json(FIXTURES / "frameworks", "--fail-on", "none")

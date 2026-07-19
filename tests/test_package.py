@@ -12,6 +12,7 @@ PLUGIN = ROOT / "plugins" / "adaptive-ui-engineer"
 S_SKILL = PLUGIN / "skills" / "adaptive-ui-s"
 N_SKILL = PLUGIN / "skills" / "adaptive-ui-n"
 MODE_SELECTION_GUIDE = S_SKILL / "references" / "mode-selection.md"
+VERIFICATION_PROTOCOL = S_SKILL / "references" / "verification-protocol.md"
 RELEASE_METADATA = S_SKILL / "release.json"
 UPDATE_CHECKER = S_SKILL / "scripts" / "check_update.py"
 PLUGIN_HOOKS = PLUGIN / "hooks" / "hooks.json"
@@ -150,6 +151,54 @@ class PackageContractTests(unittest.TestCase):
         self.assertIn("task-owned hunk", enhanced)
         self.assertIn("Before editing, confirm that the sibling auditor exists", enhanced)
         self.assertIn("do not claim an N completion", enhanced)
+        self.assertIn("Adaptive-UI-S owns an explicitly read-only request", standard)
+        self.assertIn("use Adaptive-UI-S for an explicitly read-only request", enhanced)
+        self.assertIn("If the current message invokes only N but explicitly forbids edits", enhanced)
+        self.assertIn("do not silently activate S", enhanced)
+
+    def test_skills_gate_each_explicit_request_by_actual_ui_relevance(self) -> None:
+        standard = (S_SKILL / "SKILL.md").read_text(encoding="utf-8")
+        enhanced = (N_SKILL / "SKILL.md").read_text(encoding="utf-8")
+        for content in (standard, enhanced):
+            self.assertIn("even when the prompt never mentions UI", content)
+            self.assertIn("Treat every valid explicit invocation as activation of the UI workflow", content)
+            self.assertIn("## UI-relevance gate", content)
+            self.assertIn("Do not require the user to mention UI", content)
+            self.assertIn(
+                "Classify each prompt fact by its actual in-scope adaptive UI effect, not by its wording",
+                content,
+            )
+            self.assertIn("Direct adaptive UI constraints", content)
+            self.assertIn("Indirect adaptive UI constraints", content)
+            self.assertIn("Outside-scope facts", content)
+            self.assertIn("standalone copywriting or typo fixes", content)
+            self.assertIn("cosmetic-only changes", content)
+            self.assertIn("Do not invent a hypothetical UI dependency", content)
+            self.assertIn("Do not default to a whole-repository scan", content)
+            self.assertIn("Naming a page or component alone is not enough", content)
+            self.assertIn(
+                "Of the prompt facts, let only direct and indirect adaptive UI constraints",
+                content,
+            )
+            self.assertIn("inspected project evidence and applicable local instructions", content)
+            self.assertIn("Use this gate to partition the Adaptive-UI portion", content)
+            self.assertIn("A clear request in the same message can separately authorize broader work", content)
+            self.assertIn("a background fact or the Skill invocation alone cannot", content)
+            self.assertIn("inspect the project entry-point or route map", content)
+            self.assertIn(
+                "If that bounded inspection finds no in-scope adaptive UI effect",
+                content,
+            )
+            self.assertIn("rendered character encoding", content)
+        self.assertIn("named or derived Adaptive-UI scope", standard)
+        self.assertIn("post-change style audit not applicable", enhanced)
+        self.assertIn("every task-owned change made after the baseline", enhanced)
+        self.assertIn("Exclude task-owned backend, database, deployment", enhanced)
+
+        s_metadata = (S_SKILL / "agents" / "openai.yaml").read_text(encoding="utf-8")
+        n_metadata = (N_SKILL / "agents" / "openai.yaml").read_text(encoding="utf-8")
+        self.assertIn("adaptive-UI effects, even if I do not mention UI", s_metadata)
+        self.assertIn("Implement only its adaptive-UI effects", n_metadata)
 
     def test_skills_keep_repository_publication_explicit_and_silent(self) -> None:
         for skill in (S_SKILL, N_SKILL):
@@ -181,6 +230,10 @@ class PackageContractTests(unittest.TestCase):
         self.assertIn("does not activate either workflow", guide)
         self.assertIn("$adaptive-ui-s", guide)
         self.assertIn("$adaptive-ui-n", guide)
+        self.assertIn("Standalone copywriting, typo-only edits, and cosmetic-only changes", guide)
+        self.assertIn("If only N is invoked for an explicitly read-only request", guide)
+        self.assertIn("S owns an explicitly read-only request", guide)
+        self.assertIn("N owns an implementation request", guide)
         self.assertIn("[mode-selection.md](references/mode-selection.md)", standard)
         self.assertIn("choosing S or N and invocation examples", standard)
         self.assertIn("<s-skill-root>/references/mode-selection.md", enhanced)
@@ -189,12 +242,24 @@ class PackageContractTests(unittest.TestCase):
         )
         self.assertEqual(discovered, ["adaptive-ui-n", "adaptive-ui-s"])
 
+    def test_preview_encoding_verification_is_layered_and_bounded(self) -> None:
+        protocol = VERIFICATION_PROTOCOL.read_text(encoding="utf-8")
+        self.assertIn("## 3. Verify preview character encoding", protocol)
+        self.assertIn("source bytes, HTML declarations, HTTP metadata", protocol)
+        self.assertIn('<meta charset="utf-8">', protocol)
+        self.assertIn("first 1024 bytes", protocol)
+        self.assertIn("Content-Type: text/html; charset=utf-8", protocol)
+        self.assertIn("document.characterSet", protocol)
+        self.assertIn("file://", protocol)
+        self.assertIn("AUI024", protocol)
+        self.assertIn("do not silently migrate an established non-UTF-8 file", protocol)
+
     def test_rule_catalog_matches_implemented_rule_ids(self) -> None:
         script = (SKILL / "scripts" / "audit_ui.py").read_text(encoding="utf-8")
         catalog = (SKILL / "references" / "rule-catalog.md").read_text(encoding="utf-8")
         implemented = set(re.findall(r'"(AUI\d{3})"', script))
         documented = set(re.findall(r"\b(AUI\d{3})\b", catalog))
-        expected = {"AUI{0:03d}".format(number) for number in range(1, 24)}
+        expected = {"AUI{0:03d}".format(number) for number in range(1, 25)}
         self.assertEqual(implemented, expected)
         self.assertTrue(expected.issubset(documented))
 
@@ -391,14 +456,16 @@ class PackageContractTests(unittest.TestCase):
             },
         )
         evals = json.loads((ROOT / "tests" / "evals" / "trigger-cases.json").read_text(encoding="utf-8"))
-        self.assertEqual(evals["schema_version"], 2)
+        self.assertEqual(evals["schema_version"], 3)
         self.assertEqual(set(evals), {"schema_version", "skills"})
         self.assertEqual(
             {skill["name"] for skill in evals["skills"]},
             {"adaptive-ui-s", "adaptive-ui-n"},
         )
         for skill in evals["skills"]:
-            self.assertEqual(set(skill), {"name", "display_name", "positive", "negative"})
+            self.assertEqual(
+                set(skill), {"name", "display_name", "positive", "negative", "behavior"}
+            )
             self.assertGreaterEqual(len(skill["positive"]), 4)
             self.assertGreaterEqual(len(skill["negative"]), 5)
             for group in ("positive", "negative"):
@@ -406,12 +473,75 @@ class PackageContractTests(unittest.TestCase):
                     self.assertEqual(set(case), {"prompt", "reason"})
                     self.assertTrue(case["prompt"].strip())
                     self.assertTrue(case["reason"].strip())
+            self.assertGreaterEqual(len(skill["behavior"]), 6)
+            for case in skill["behavior"]:
+                self.assertEqual(set(case), {"prompt", "expected", "reason"})
+                self.assertTrue(case["prompt"].strip())
+                self.assertTrue(case["expected"].strip())
+                self.assertTrue(case["reason"].strip())
         standard = next(skill for skill in evals["skills"] if skill["name"] == "adaptive-ui-s")
         enhanced = next(skill for skill in evals["skills"] if skill["name"] == "adaptive-ui-n")
         self.assertEqual(standard["display_name"], "Adaptive-UI-S")
         self.assertEqual(enhanced["display_name"], "Adaptive-UI-N")
         self.assertTrue(any("cosmetic" in case["reason"] for case in standard["negative"]))
         self.assertTrue(any("mandatory" in case["reason"] for case in enhanced["positive"]))
+        for skill in (standard, enhanced):
+            invocation = "${0}".format(skill["name"])
+            self.assertTrue(all(invocation in case["prompt"] for case in skill["positive"]))
+            self.assertTrue(all(invocation not in case["prompt"] for case in skill["negative"]))
+            self.assertTrue(
+                any("without UI terminology" in case["reason"] for case in skill["positive"])
+            )
+            self.assertTrue(
+                any(
+                    "PostgreSQL" in case["prompt"] and "Kubernetes" in case["prompt"]
+                    for case in skill["positive"]
+                )
+            )
+            self.assertTrue(
+                any(
+                    "optimize this PostgreSQL query" in case["prompt"]
+                    and "no in-scope adaptive UI effect" in case["reason"]
+                    for case in skill["positive"]
+                )
+            )
+            behavior = skill["behavior"]
+            self.assertTrue(
+                any(
+                    "blue to green and fix a typo" in case["prompt"]
+                    and "no in-scope adaptive UI effect" in case["expected"]
+                    and "outside this workflow" in case["expected"]
+                    for case in behavior
+                )
+            )
+            self.assertTrue(
+                any(
+                    "Use both $adaptive-ui-s and $adaptive-ui-n" in case["prompt"]
+                    and "read-only" in case["expected"]
+                    for case in behavior
+                )
+            )
+            self.assertTrue(
+                any(
+                    "garbled" in case["prompt"]
+                    and "document.characterSet" in case["expected"]
+                    for case in behavior
+                )
+            )
+        self.assertTrue(
+            any(
+                "Do not inspect or edit" in case["expected"]
+                and "current-message S invocation" in case["expected"]
+                for case in enhanced["behavior"]
+            )
+        )
+        self.assertTrue(
+            any(
+                "every task-owned hunk" in case["expected"]
+                and "exclude API-only" in case["expected"]
+                for case in enhanced["behavior"]
+            )
+        )
 
     def test_readmes_state_current_release_and_portability_boundary(self) -> None:
         english = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -428,6 +558,19 @@ class PackageContractTests(unittest.TestCase):
         self.assertIn("plugin parent; it is a container", english)
         self.assertIn("两个 Skill 都声明为仅显式调用", chinese)
         self.assertIn("插件父级；它只是容器", chinese)
+        self.assertIn("UI-relevance gating", english)
+        self.assertIn("even when the remaining prompt does not mention UI", english)
+        self.assertIn("a clear broader request in the same message", english)
+        self.assertIn("Skill invocation alone cannot authorize it", english)
+        self.assertIn("Browser-preview encoding verification", english)
+        self.assertIn("AUI024", english)
+        self.assertIn("document.characterSet", english)
+        self.assertIn("UI 相关性门控", chinese)
+        self.assertIn("不要求其余提示词出现“UI”", chinese)
+        self.assertIn("背景信息或 Skill 调用本身不构成授权", chinese)
+        self.assertIn("网页预览编码验证", chinese)
+        self.assertIn("AUI024", chinese)
+        self.assertIn("只读请求由 S 负责，实施请求由 N 负责", chinese)
         self.assertIn("### Optional update notices", english)
         self.assertIn("### 可选更新提醒", chinese)
         self.assertIn("ADAPTIVE_UI_UPDATE_CHECK=0", english)

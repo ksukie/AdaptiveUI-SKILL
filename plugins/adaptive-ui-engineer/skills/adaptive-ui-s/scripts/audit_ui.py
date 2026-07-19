@@ -100,6 +100,7 @@ RULE_METADATA: Dict[str, Dict[str, str]] = {
     "AUI021": {"evidence_level": "source_observed", "default_validation_state": "not_applicable"},
     "AUI022": {"evidence_level": "source_observed", "default_validation_state": "not_applicable"},
     "AUI023": {"evidence_level": "source_observed", "default_validation_state": "not_applicable"},
+    "AUI024": {"evidence_level": "source_observed", "default_validation_state": "manual_review_needed"},
 }
 
 
@@ -321,6 +322,7 @@ class MarkupInspector(HTMLParser):
         self.missing_alt: List[Tuple[int, str]] = []
         self.missing_iframe_title: List[Tuple[int, str]] = []
         self.local_references: List[Tuple[int, str, str]] = []
+        self.encoding_declarations: List[Tuple[int, int, str, str, str]] = []
 
     def handle_startendtag(
         self, tag: str, attrs: List[Tuple[str, Optional[str]]]
@@ -331,7 +333,7 @@ class MarkupInspector(HTMLParser):
         self, tag: str, attrs: List[Tuple[str, Optional[str]]]
     ) -> None:
         tag_name = tag.lower()
-        line = self.getpos()[0]
+        line, column = self.getpos()
         attr_map = {name.lower(): value for name, value in attrs}
 
         if tag_name == "html":
@@ -339,6 +341,27 @@ class MarkupInspector(HTMLParser):
             self.html_lang = (attr_map.get("lang") or "").strip()
         if tag_name == "meta" and (attr_map.get("name") or "").lower() == "viewport":
             self.viewport = (line, attr_map.get("content") or "")
+        if tag_name == "meta":
+            raw_tag = self.get_starttag_text() or "<meta>"
+            if "charset" in attr_map:
+                self.encoding_declarations.append(
+                    (line, column, "charset", (attr_map.get("charset") or "").strip(), raw_tag)
+                )
+            elif (attr_map.get("http-equiv") or "").strip().lower() == "content-type":
+                content = attr_map.get("content") or ""
+                match = re.search(
+                    r"(?:^|;)\s*charset\s*=\s*([^\s;]+)", content, flags=re.IGNORECASE
+                )
+                if match:
+                    self.encoding_declarations.append(
+                        (
+                            line,
+                            column,
+                            "http-equiv",
+                            match.group(1).strip("\"'"),
+                            raw_tag,
+                        )
+                    )
 
         identifier = attr_map.get("id")
         if identifier:
@@ -540,6 +563,64 @@ class Auditor:
                     "The viewport configuration restricts user zoom.",
                     content,
                     "Remove user-scalable=no and restrictive maximum-scale values.",
+                )
+
+        declarations = parser.encoding_declarations
+        if not declarations and not text.startswith("\ufeff"):
+            self.add(
+                "AUI024",
+                "P2",
+                "medium",
+                "encoding",
+                rel_path,
+                1,
+                "The HTML document has no in-document UTF-8 declaration.",
+                "No meta charset declaration or UTF-8 BOM found",
+                "Verify that the HTTP Content-Type declares charset=utf-8; otherwise add one early <meta charset=\"utf-8\"> declaration.",
+            )
+        if len(declarations) > 1:
+            self.add(
+                "AUI024",
+                "P1",
+                "high",
+                "encoding",
+                rel_path,
+                declarations[1][0],
+                "The HTML document contains multiple character-encoding declarations.",
+                "Encoding declarations appear on lines {0}".format(
+                    [item[0] for item in declarations]
+                ),
+                "Keep one UTF-8 declaration and ensure that HTTP character-set metadata does not conflict with it.",
+            )
+        line_starts = [0]
+        line_starts.extend(match.end() for match in re.finditer(r"\n", text))
+        for line, column, declaration_type, value, raw_tag in declarations:
+            if value.lower() != "utf-8":
+                self.add(
+                    "AUI024",
+                    "P1",
+                    "high",
+                    "encoding",
+                    rel_path,
+                    line,
+                    "The HTML character-encoding declaration is not UTF-8.",
+                    "{0} declares {1!r}".format(declaration_type, value),
+                    "Encode the document as UTF-8 and declare it with <meta charset=\"utf-8\"> or matching HTTP Content-Type metadata.",
+                )
+            line_index = max(0, min(line - 1, len(line_starts) - 1))
+            tag_end = line_starts[line_index] + column + len(raw_tag)
+            serialized_end = len(text[:tag_end].encode("utf-8"))
+            if serialized_end > 1024:
+                self.add(
+                    "AUI024",
+                    "P2",
+                    "high",
+                    "encoding",
+                    rel_path,
+                    line,
+                    "The HTML character-encoding declaration ends after the first 1024 bytes.",
+                    "Declaration ends at byte {0}".format(serialized_end),
+                    "Move one <meta charset=\"utf-8\"> declaration near the start of head so it is fully serialized within the first 1024 bytes.",
                 )
 
         if not parser.has_html or not parser.html_lang:

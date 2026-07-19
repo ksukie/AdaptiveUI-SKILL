@@ -10,10 +10,16 @@ when the user explicitly invokes S or N in the current message.
 
 | Choose | When the user needs | Completion behavior |
 | --- | --- | --- |
-| `Adaptive-UI-S` | A responsive UI audit, explanation, scoped refactor, or an explicitly requested final review after intermittent work. | Never adds a completion audit automatically. |
-| `Adaptive-UI-N` | A UI implementation, repair, or refactor that must finish with a review of this task's changed UI files and directly related styles. | Completes its bounded post-change style audit before reporting completion. |
+| `Adaptive-UI-S` | A responsive UI audit, explanation, ordinary scoped implementation, or an explicitly requested final review after intermittent work. The request may describe product behavior without naming UI. | Derives only in-scope adaptive UI effects. Never adds a completion audit automatically. |
+| `Adaptive-UI-N` | A product implementation, repair, or refactor whose derived adaptive UI changes must finish with a review of every task-owned UI-affecting change and its directly related styles. | Implements only in-scope adaptive UI effects, then completes its bounded post-change style audit. |
 
 Choose S when the user wants analysis only, ordinary UI work, or control over whether a final review happens. Choose N when the user specifically wants the implementation to include a mandatory final style check.
+
+The user does not need to repeat UI terminology after explicitly invoking a Skill. Each Skill derives the user-visible surfaces, flows, states, content constraints, and adaptive behavior implied by the product request. It treats a nominally non-UI fact as relevant only when the request or project shows a concrete user-visible consequence. Database, server, deployment, and other non-UI details do not shape the Adaptive-UI scope merely because they appear in the same prompt.
+
+Explicit invocation starts the relevance gate; it does not make every UI request adaptive UI work. Standalone copywriting, typo-only edits, and cosmetic-only changes remain outside scope when they do not affect hierarchy, contrast, state, reflow, accessibility, browser compatibility, or rendered character encoding. This boundary partitions Adaptive-UI work without canceling or authorizing broader work. A clear broader request in the same message can be handled under other applicable instructions; a background fact or Skill invocation alone cannot authorize it.
+
+If only N is invoked for an explicitly read-only request, N stops without project inspection or edits and asks for a current-message S invocation. If both Skills are explicitly invoked, S owns an explicitly read-only request and N owns an implementation request.
 
 ## Example prompts
 
@@ -35,6 +41,14 @@ Use N for implementation plus its required scoped audit:
 Use $adaptive-ui-n to simplify the dashboard breakpoint rules, remove stale style overrides, and complete the required post-change style audit.
 ```
 
+Use N when the request names only product behavior:
+
+```text
+Use $adaptive-ui-n to add workspace invitations with owner, editor, and viewer roles.
+```
+
+N derives the invitation entry, form, role controls, pending, success, and error UI without requiring the prompt to mention UI. Storage, email delivery, and deployment remain outside the Adaptive-UI scope unless they impose a concrete user-visible state or constraint.
+
 ## Invocation boundary
 
-Select `@Adaptive-UI-S` or `@Adaptive-UI-N` in a supported picker, or write `$adaptive-ui-s` or `$adaptive-ui-n` in the current message. Earlier invocations, installation alone, and a matching task description do not activate either workflow. If both are explicitly invoked in the same current message, N owns the request because it includes the required post-change audit.
+Select `@Adaptive-UI-S` or `@Adaptive-UI-N` in a supported picker, or write `$adaptive-ui-s` or `$adaptive-ui-n` in the current message. Earlier invocations, installation alone, and a matching task description do not activate either workflow. A valid current-message invocation activates the chosen relevance gate regardless of whether the remaining text contains UI terminology. If both are explicitly invoked, S owns an explicitly read-only request; otherwise N owns the implementation and required post-change audit.

@@ -26,7 +26,30 @@ Document-level semantic checks apply to `.html` and `.htm`. Framework component 
 
 Also run project-native type checks, lint, unit tests, accessibility tests, and production builds relevant to the authorized scope.
 
-## 3. Use a representative viewport matrix
+## 3. Verify preview character encoding
+
+Treat source bytes, HTML declarations, HTTP metadata, and the browser's effective decoding as separate evidence. A valid UTF-8 source file alone does not prove that a served preview is decoded as UTF-8.
+
+- Preserve the project's documented encoding and generated-file conventions. Default new serialized HTML, CSS, and JavaScript source to UTF-8, but do not silently migrate an established non-UTF-8 file as part of an unrelated UI change.
+- For a standalone serialized HTML document, keep the actual bytes UTF-8 and use one `<meta charset="utf-8">` declaration fully within the first 1024 bytes unless verified HTTP `Content-Type` metadata or a UTF-8 BOM supplies the encoding. Prefer the early `meta` declaration as a portable fallback for local-file preview. Do not add it inside `iframe[srcdoc]` or XML, and do not add obsolete `charset` attributes to `script` elements or a CSS `@charset` rule by default.
+- Preview through the project's existing HTTP development server when production uses HTTP. A `file://` preview cannot verify response headers, routing, asset MIME types, or server/header conflicts.
+- For an HTTP preview, inspect the main document response and expect `Content-Type: text/html; charset=utf-8` when the server supplies a character set. Treat a non-UTF-8 header or a conflict among the HTTP header, BOM, and `meta` declaration as a failure; transport metadata overrides an in-document declaration except when a BOM takes precedence.
+- In the rendered page, record the effective decoding without mutating the document:
+
+```js
+({
+  characterSet: document.characterSet,
+  contentType: document.contentType,
+  replacementCharacters:
+    (document.body?.innerText.match(/\uFFFD/g) ?? []).length,
+});
+```
+
+Require `characterSet` to normalize to `UTF-8`. Treat replacement characters as a review signal because U+FFFD can be intentional. Verify real project content that exercises non-ASCII text, such as Chinese, emoji, combining marks, or translated labels; do not inject or rewrite product content without authorization.
+
+A missing in-document declaration is not by itself a runtime failure when a verified UTF-8 HTTP header or BOM exists. Report which layer supplied the encoding and distinguish a static AUI024 finding from an observed rendering failure.
+
+## 4. Use a representative viewport matrix
 
 Use these starting viewport sizes unless the product documents a different matrix:
 
@@ -49,7 +72,7 @@ At each width verify:
 - fixed and sticky layers do not hide content or focused controls;
 - long labels, long URLs, translated strings, empty states, and error states remain usable.
 
-## 4. Measure runtime geometry
+## 5. Measure runtime geometry
 
 When browser evaluation is available, begin with:
 
@@ -81,7 +104,7 @@ const vw = document.documentElement.clientWidth;
 
 Treat transformed decoration, visually hidden content, open drawers, and intentional full-bleed media as review cases rather than automatic defects.
 
-## 5. Verify keyboard and focus
+## 6. Verify keyboard and focus
 
 Use Tab and Shift+Tab from the browser chrome into the page. Exercise Enter, Space, arrow keys, and Escape according to each control's native pattern.
 
@@ -95,7 +118,7 @@ Confirm:
 - no fixed layer fully obscures the focused element;
 - hidden or duplicate carousel content is not reachable.
 
-## 6. Verify zoom and user settings
+## 7. Verify zoom and user settings
 
 - Test text resize or browser zoom at 200%.
 - Test 400% zoom on a sufficiently wide desktop viewport to exercise approximately 320 CSS pixel reflow.
@@ -106,7 +129,7 @@ Confirm:
 
 Record exceptions for maps, diagrams, data tables, and other genuinely two-dimensional content. Their surrounding instructions and controls must still reflow.
 
-## 7. Capture trustworthy visual evidence
+## 8. Capture trustworthy visual evidence
 
 - Wait for fonts, images, route transitions, skeletons, dialogs, and animations to settle.
 - Capture viewport screenshots at the tested state and width.
@@ -115,7 +138,7 @@ Record exceptions for maps, diagrams, data tables, and other genuinely two-dimen
 - Reject screenshots that are blank, stale, dimmed by an overlay, clipped, or captured before content is ready.
 - Pair screenshots with DOM measurements for overflow and obstruction claims.
 
-## 8. Grade evidence
+## 9. Grade evidence
 
 Use these labels:
 
@@ -127,6 +150,6 @@ Use these labels:
 
 Do not promote an inference to “verified.” Report the browser engine and whether it was a real browser, automation engine, emulator, or physical device.
 
-## 9. Complete the change
+## 10. Complete the change
 
 Compare before and after behavior. Re-run the static auditor and project checks. Confirm that only authorized files changed. Summarize passes, failures, suppressions, unsupported browsers, and untested baseline environments.

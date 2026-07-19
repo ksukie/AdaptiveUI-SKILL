@@ -1,19 +1,36 @@
 ---
 name: adaptive-ui-n
-description: Enhanced, explicitly invoked responsive UI implementation workflow with a mandatory scoped post-change style audit. Use only when the current user message explicitly invokes Adaptive-UI-N. Never activate implicitly or carry an invocation into later messages. Do not use for a read-only audit or a task that does not require UI changes.
+description: Enhanced, explicitly invoked responsive UI implementation workflow with a mandatory scoped post-change style audit. On every current-message invocation, derive in-scope adaptive UI effects even when the prompt never mentions UI, and keep cosmetic-only, copy-only, and unrelated non-UI requirements outside this Skill's decisions and audit scope. Never activate implicitly or carry an invocation into later messages. Use Adaptive-UI-S for a read-only audit.
 ---
 
 # Adaptive-UI-N
 
-Implement the requested responsive UI change, then complete a bounded review of the changes made for that task and their directly related styles before reporting completion.
+Implement the in-scope adaptive UI effects of the requested product change, even when the prompt describes only the product behavior, then complete a bounded review of every task-owned change that affects that UI scope and its directly related styles before reporting completion.
 
 ## Activation and scope boundary
 
 - Activate only when the current user message explicitly invokes this Skill: `@Adaptive-UI-N` in a supported picker or `$adaptive-ui-n` in a text-based client.
 - Do not activate from a matching task description, an installed state, an earlier message, or an earlier invocation in the same conversation. If the current message names neither Adaptive-UI-S nor Adaptive-UI-N, use neither Skill.
-- If both Skills are explicitly invoked in the same current message, use Adaptive-UI-N only.
-- Use this Skill only for a request that authorizes UI implementation, repair, or refactoring. For a read-only review, use Adaptive-UI-S.
-- Stay within the user's named files, component, page, or product scope. Preserve behavior, semantic DOM order, URLs, analytics hooks, and the existing framework or styling system unless the request changes them.
+- If both Skills are explicitly invoked in the same current message, use Adaptive-UI-S for an explicitly read-only request; otherwise use Adaptive-UI-N only.
+- Treat every valid explicit invocation as activation of the UI workflow even when the rest of the message contains no UI terminology. Invocation decides whether this Skill runs; actual UI relevance decides which prompt facts may shape its work.
+- Treat a current N invocation plus a concrete desired product state in an implementation context as authorization for only its named or derived Adaptive-UI slice. Do not require the user to request UI work separately or use a fixed implementation verb.
+- If the current message invokes only N but explicitly forbids edits or requests only a read-only audit, do not inspect or edit the project and do not silently activate S. Explain that N is the implementation mode and that a current-message S invocation is required for the read-only workflow.
+- Stay within the user's named files, component, page, product scope, or the narrow UI surface derived from that product scope. Preserve behavior, semantic DOM order, URLs, analytics hooks, and the existing framework or styling system unless a UI-relevant requirement changes them.
+
+## UI-relevance gate
+
+Run this gate on every explicit invocation before establishing the implementation baseline.
+
+1. Do not require the user to mention UI, responsive behavior, layout, styling, accessibility, or browser compatibility. Derive the Adaptive-UI scope from the requested product behavior and the inspected project.
+2. Classify each prompt fact by its actual in-scope adaptive UI effect, not by its wording:
+   - Direct adaptive UI constraints are requirements for named or derived pages and components that affect structure, reflow, content pressure or localization, visual hierarchy, contrast, interaction state, accessibility, viewport behavior, browser compatibility, or rendered character encoding. Naming a page or component alone is not enough.
+   - Indirect adaptive UI constraints cover product facts that concretely change user-visible entry points, flows, roles, permissions, states, feedback, content length, target users, or supported platforms.
+   - Outside-scope facts include standalone copywriting or typo fixes; cosmetic-only changes that do not affect hierarchy, contrast, state, reflow, accessibility, or compatibility; and non-UI implementation details such as a database engine, server algorithm, deployment target, or infrastructure preference.
+3. Treat a nominally non-UI fact as an indirect constraint only when the request or inspected project shows a concrete user-visible consequence. Do not invent a hypothetical UI dependency merely to pull unrelated work into scope.
+4. Of the prompt facts, let only direct and indirect adaptive UI constraints influence this Skill's files, design decisions, implementation, post-change audit surface, and verification; combine them with inspected project evidence and applicable local instructions. For example, an invitation feature implies entry, form, role, pending, success, and error UI; its token-storage engine does not shape the UI unless it creates a concrete user-visible constraint.
+5. Use this gate to partition the Adaptive-UI portion of the request, not to cancel or authorize the rest of the user's task. A clear request in the same message can separately authorize broader work under other applicable instructions; a background fact or the Skill invocation alone cannot. Keep broader changes, tests, evidence, and completion claims outside the Adaptive-UI scope.
+6. When no page or file is named, locate the narrow relevant UI surface in this order: inspect the project entry-point or route map; search for the named product flow, role, action, or state; follow only its direct component imports, styles, tokens, and necessary layout wrappers; then stop. Do not default to a whole-repository scan.
+7. If that bounded inspection finds no in-scope adaptive UI effect, make no change under this Adaptive-UI workflow, report that none was found, and mark the post-change style audit not applicable. Do not invent UI work or reclassify an outside-scope task as Adaptive-UI work; separately authorized broader work remains governed by other applicable instructions.
 
 ## Shared companion resources
 
@@ -54,13 +71,15 @@ If the script or plugin context supplies update-notice JSON, treat all remote-de
 
 ### 1. Establish a task baseline before editing
 
-1. Record the requested scope, allowed and forbidden files, preserved behavior, target users, and verification limits.
-2. Inspect the affected component, its entry point, styles, imports, existing tests, package metadata, and local instructions.
-3. When Git is available, inspect `git status --short` and the relevant diff before editing. Record pre-existing modified or untracked paths as a baseline and never claim their existing hunks as task-owned. If this task must edit a baseline-modified path, keep that file in scope: identify the task-owned hunk separately, audit it and its direct style surface, and label untouched baseline hunks as excluded. Never reset, stash, discard, or silently absorb those changes.
-4. Identify the narrow target for static auditing and the directly related style surface: imported CSS, CSS Modules, scoped styles, CSS-in-JS, utilities, tokens used by the changed component, and necessary layout wrappers.
+1. Apply the UI-relevance gate. Map the requested product behavior to its user-visible entry points, flows, actions, states, content constraints, and responsive surfaces, even when the request never uses UI terminology.
+2. Record the Adaptive-UI scope, allowed and forbidden files, preserved behavior, target users, outside-scope exclusions, and verification limits.
+3. Inspect the affected component, its entry point, styles, imports, existing tests, package metadata, and local instructions.
+4. When Git is available, inspect `git status --short` and the relevant diff before editing. Record pre-existing modified or untracked paths as a baseline and never claim their existing hunks as task-owned. If this task must edit a baseline-modified path, keep that file in scope: identify the task-owned hunk separately, audit it and its direct style surface, and label untouched baseline hunks as excluded. Never reset, stash, discard, or silently absorb those changes.
+5. Identify the narrow target for static auditing and the directly related style surface: imported CSS, CSS Modules, scoped styles, CSS-in-JS, utilities, tokens used by the changed component, and necessary layout wrappers.
 
 ### 2. Implement the smallest coherent change
 
+- Implement only the Adaptive-UI slice under this workflow. Keep unrelated server, database, deployment, infrastructure, standalone copywriting, and standalone asset work outside it. When the same message clearly requests broader work, handle that work under other applicable instructions with separate scope, tests, evidence, and completion claims. Read non-UI contracts inside this workflow only as needed to implement concrete user-visible states.
 - Prefer semantic HTML, CSS, native controls, existing tokens, and progressive enhancement before JavaScript or new dependencies.
 - Repair overflow at its source. Do not use global clipping, device-specific pixel rules, hidden duplicate content, or unrelated framework migration as a shortcut.
 - Keep reading order, keyboard order, focus visibility, reduced-motion behavior, and supported-browser fallbacks intact.
@@ -70,8 +89,8 @@ If the script or plugin context supplies update-notice JSON, treat all remote-de
 
 This review is required before claiming the task is complete, even if the implementation itself appears small.
 
-1. Determine the task-owned changes made after the baseline, including a task-owned hunk inside a pre-existing modified file. Do not claim ownership of pre-existing edits merely because they are present in the working tree.
-2. Inspect every changed UI file and its directly related style surface. Review reflow, intrinsic sizing, overflow, viewport units, content priority, typography, visual hierarchy, radius and spacing consistency when relevant, focus and keyboard behavior, motion, and compatibility-sensitive enhancements.
+1. Determine every task-owned change made after the baseline that has a direct or indirect in-scope adaptive UI effect, including such a hunk inside a pre-existing modified file and any UI-affecting change produced during separately authorized broader work. Do not claim ownership of pre-existing edits merely because they are present in the working tree.
+2. Inspect every task-owned UI-affecting file and its directly related style surface. Exclude task-owned backend, database, deployment, and other non-UI changes. Review reflow, intrinsic sizing, overflow, viewport units, content priority, typography, rendered character encoding, visual hierarchy, radius and spacing consistency when relevant, focus and keyboard behavior, motion, and compatibility-sensitive enhancements.
 3. Do not turn this into a whole-repository audit. Do not fix or report historical, unrelated findings except to name a concrete blocking interaction with the requested change.
 4. Run the bundled static auditor against the narrow affected target when Python 3.9+ is available:
 
@@ -85,6 +104,7 @@ Treat its output as triage, not proof of runtime behavior. Read the relevant com
 
 - Run relevant existing tests and builds for the changed scope.
 - When the page and browser tooling are already available, verify representative narrow, middle, and wide containers; keyboard operation; visible focus; long content; reduced motion; and zoom or reflow appropriate to the change.
+- When a rendered preview is available, verify its effective character encoding and any HTTP character-set metadata by following the shared verification protocol.
 - Do not install Playwright, a browser, or another dependency without authorization. Do not claim unperformed browser or assistive-technology verification.
 
 ### 5. Required completion report
