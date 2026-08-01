@@ -2,8 +2,9 @@
 # The validator source commit and archive hash live in ../scripts/run_skills_ref.py.
 # Every transitive wheel is fixed and SHA-256 verified by pip.
 # Hashes correspond to the release files published on PyPI as of 2026-07-12.
-click==8.3.0 \
-    --hash=sha256:9b9f285302c6e3064f4330c05f05b81945b2a39544279343e6e7c5f27a9baddc
+click==8.4.2 \
+    --hash=sha256:9a6cea6e60b17ebe0a44c5cc636d94f09bd66142c1cd7d8b4cd731c4917a15f6 \
+    --hash=sha256:e6f9f66136c816745b9d65817da91d61d957fb16e02e4dcd0552553c5a197b76
 colorama==0.4.6; platform_system == "Windows" \
     --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
 strictyaml==1.7.3 \
