@@ -28,7 +28,7 @@ class PackageContractTests(unittest.TestCase):
         paths = [
             ROOT / "README.md",
             ROOT / "README.en.md",
-            ROOT / "docs" / "images" / "adaptiveui-skill-workflow.png",
+            ROOT / "docs" / "images" / "adaptiveui-skill-workflow.webp",
             ROOT / "LICENSE",
             ROOT / "CONTRIBUTING.md",
             ROOT / "SECURITY.md",
@@ -550,8 +550,8 @@ class PackageContractTests(unittest.TestCase):
         self.assertFalse((ROOT / "README.zh-CN.md").exists())
         self.assertIn("[English](README.en.md)", chinese)
         self.assertIn("[简体中文](README.md)", english)
-        self.assertIn("docs/images/adaptiveui-skill-workflow.png", chinese)
-        self.assertIn("docs/images/adaptiveui-skill-workflow.png", english)
+        self.assertIn("docs/images/adaptiveui-skill-workflow.webp", chinese)
+        self.assertIn("docs/images/adaptiveui-skill-workflow.webp", english)
         self.assertIn("### Evidence status for 2.0.0", english)
         self.assertIn("### 2.0.0 证据状态", chinese)
         self.assertIn("mode-selection guide", english)

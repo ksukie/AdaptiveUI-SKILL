@@ -11,7 +11,7 @@
 AdaptiveUI-SKILL 将 UI 适配从“多写几个断点”升级为有证据的工程流程。它覆盖布局重排、横向溢出、视口单位、语义圆角体系、键盘与触摸交互、无障碍偏好、跨浏览器回退和不必要的 JavaScript 复杂度。它不会为每一种物理分辨率单独生成页面，也不会用全局裁切掩盖问题。
 
 <p align="center">
-  <img src="docs/images/adaptiveui-skill-workflow.png" width="100%" alt="Adaptive UI SKILL 审计界面问题、修复根因，并验证移动端、平板和桌面端的响应式布局。">
+  <img src="docs/images/adaptiveui-skill-workflow.webp" width="100%" alt="Adaptive UI SKILL 审计界面问题、修复根因，并验证移动端、平板和桌面端的响应式布局。">
 </p>
 
 <p align="center"><sub>审计证据，修复根因，验证可靠重排。</sub></p>

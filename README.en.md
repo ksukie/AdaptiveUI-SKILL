@@ -11,7 +11,7 @@
 AdaptiveUI-SKILL turns responsive UI work into an evidence-based workflow. It covers layout reflow, overflow, viewport units, semantic radius systems, keyboard and touch interaction, accessibility settings, cross-browser fallbacks, and unnecessary JavaScript complexity. It does not generate a separate design for every screen resolution and does not hide defects behind global clipping.
 
 <p align="center">
-  <img src="docs/images/adaptiveui-skill-workflow.png" width="100%" alt="Adaptive UI SKILL audits interface issues, repairs root causes, and verifies responsive layouts across mobile, tablet, and desktop widths.">
+  <img src="docs/images/adaptiveui-skill-workflow.webp" width="100%" alt="Adaptive UI SKILL audits interface issues, repairs root causes, and verifies responsive layouts across mobile, tablet, and desktop widths.">
 </p>
 
 <p align="center"><sub>Audit the evidence, repair the root cause, and verify resilient reflow.</sub></p>
